@@ -243,7 +243,7 @@ function render(){
   document.getElementById('foot').innerHTML =
     '数据：DM 逐日估值接口 RP 报价 ＋ 曲线（自拟合：池内锚点 Nelson-Siegel；CNH 收益率曲线：按期限点插值）　·　客户 Funding Note 池 ' + W.n_bonds +
     ' 只 × ' + W.n_days + ' 个交易日（2026-' + W.first + ' ~ ' + W.last + '）<br>' +
-    '口径：利差＝该券估值收益率 − 基准曲线在其剩余期限上的取值；重估日历＝周频 5 交易日 + 曲线累计变动超阈值触发；D ≈ 剩余期限（近似）';
+    '口径：利差＝该券估值收益率 − 基准曲线在其剩余期限上的取值；重估日历＝曲线层周频 5 交易日封顶（位移超阈提前）+ 券层触发驱动（rolling）；D ≈ 剩余期限（近似）';
 }
 </script>
 </body>
