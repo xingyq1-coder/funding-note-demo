@@ -106,7 +106,7 @@
       <span><i class="sw quote"></i> 市场逐日报价（现状：每天都在动）</span>
       <span><i class="sw band"></i> 当日买卖价差</span>
       <span><i class="sw step"></i> 本口径估值（每天检查；未触发不跳）</span>
-      <span><i class="sw trig"></i> 券层触发日（该券报价偏离自己的冻结利差超过阈值，触发即留痕）</span>
+      <span><i class="sw trig"></i> 券层触发日（该券报价偏离自己的冻结利差超过阈值，当天单独重估）</span>
     </div>
     <div class="story" id="story"></div>
     <div id="trigbox"></div>
@@ -238,7 +238,7 @@ function render(){
             : '估值变动的来源只有两类：曲线层重估时的整池同步，和该券报价偏离超阈时的单独重估——每一处都能追溯到哪一天、因为什么。')
     + pxNote;
 
-  // 券层触发记录（可追溯性）：触发即留痕，按当前政策（A）估值仍取 20 日中位、未必在这天变
+  // 券层触发记录（可追溯性）：上线口径＝触发即重估（窗口 5 天），叠加冷却/单次上限/单日名额限制
   document.getElementById('trigbox').innerHTML = trg.length
     ? '<details class="trg"><summary>触发重估 ' + trg.length + ' 次（券层，点开看每次为什么跳）</summary>' +
       '<table><thead><tr><th class="l">触发日</th><th>当日偏离冻结利差</th><th>该券阈值</th><th>冻结利差 触发前 → 触发后</th></tr></thead><tbody>' +
