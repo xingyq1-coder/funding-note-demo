@@ -246,5 +246,15 @@ function render(){
     '口径：利差＝该券估值收益率 − 基准曲线在其剩余期限上的取值；重估日历＝曲线层周频 5 交易日封顶（位移超阈提前）+ 券层触发驱动（rolling）；D ≈ 剩余期限（近似）';
 }
 </script>
+<script>
+/* 客户券单范围（SHOW_ALL_POOLS=false）下：本页暂时不进导航（自拟合臂需要池内主权锚，客户券单里没有）*/
+(function(){
+  if (window.SHOW_ALL_POOLS) return;
+  Array.prototype.forEach.call(document.querySelectorAll('a'), function(a){
+    var h = a.getAttribute('href') || '';
+    if (h.indexOf('curve') >= 0) a.style.display = 'none';
+  });
+})();
+</script>
 </body>
 </html>
