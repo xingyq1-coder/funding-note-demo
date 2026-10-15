@@ -117,7 +117,7 @@
     </div>
     <div class="story" id="story"></div>
     <div id="trigbox"></div>
-    <div class="fine">
+    <div class="fine" id="fineNote">
       竖虚线＝曲线层重估日（每 5 个交易日封顶一次、位移超阈则提前；本窗口：09-08 / 09-15 / 09-21 / 09-28 / 10-06 / 10-12；本窗口曲线层未额外提前触发）。这天全池 402 只一起换 mark。
       除此之外每条券每天都被检查、偏离超阈就当天单独重估（rolling），全窗口 78.5% 的「券×日」估值为零变动。<br>
       数据：DM 逐日估值接口 RP 报价 · 客户 Funding Note 池 402 只 × 28 个交易日（2026-09-08 ~ 10-14）· 非重估日存在未确认的曲线移动，中位 0.29 bp、最大 1.65 bp，下次重估日一并入账 · 内部演示，非对外承诺<br>
@@ -157,9 +157,38 @@ function updatePoolNote(){
 }
 function loadPool(url){
   fetch(url).then(function(r){ return r.json(); }).then(function(j){
-    DATA = j; fill(sorted()); render(); updatePoolNote();
+    DATA = j; fill(sorted()); render(); updatePoolNote(); alignFineText();
   });
 }
+
+/* ── 展示范围开关（2026-10-15 用户要求：先只展示客户后来提供的券单，全池收起）──
+   SHOW_ALL_POOLS = false → 券池下拉里去掉「全池」，只用客户券单
+   SHOW_ALL_POOLS = true  → 「全展示」：下拉里恢复「全池」（等用户说全展示时改这一处）*/
+var SHOW_ALL_POOLS = false;
+var FINE_BASE = null;   /* 口径说明原文（全池口径），首次读到后缓存，便于两个范围来回切 */
+function initPoolScope(){
+  var sel = document.getElementById('poolSel');
+  if (!SHOW_ALL_POOLS){
+    var opt = sel.querySelector('option[value="/api/staircase"]');
+    if (opt) sel.removeChild(opt);
+  }
+  if (sel.options.length) sel.value = sel.options[0].value;
+}
+function alignFineText(){
+  var el = document.getElementById('fineNote'); if (!el) return;
+  if (FINE_BASE === null) FINE_BASE = el.innerHTML;
+  var m = (DATA && DATA.meta) || {};
+  var h = FINE_BASE;
+  if (m.pool === 'bosera' && m.n_bonds){
+    h = h.replace(/这天全池 \d+ 只一起换 mark/, '这天整池 ' + m.n_bonds + ' 只一起换 mark');
+    h = h.replace(/客户 Funding Note 池 \d+ 只 × \d+ 个交易日（[^）]*）/,
+                  '客户提供的 CNH Funding Notes 券单 ' + m.n_bonds + ' 只 × ' + m.n_days + ' 个交易日（2026-' + m.window + '）');
+    h = h.replace(/全窗口 [\d.]+% 的「券×日」估值为零变动/,
+                  '全窗口 ' + m.bond_day_zero_change_pct + '% 的「券×日」估值为零变动');
+  }
+  el.innerHTML = h;
+}
+initPoolScope();
 loadPool(document.getElementById('poolSel').value);
 document.getElementById('poolSel').addEventListener('change', function(){ loadPool(this.value); });
 
