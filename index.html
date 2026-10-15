@@ -64,17 +64,14 @@
   .poolnote b { color:#1d4ed8; }
   .sw.trig { width:11px; height:11px; border-radius:50%; background:#ea580c; border:2px solid #fff; box-shadow:0 0 0 1px #ea580c; }
   .sw.bvline { background:repeating-linear-gradient(90deg,#7c3aed 0 5px,transparent 5px 9px); }
-  /* 区间滑动/缩放控件（2026-10-15 用户要求：像行情软件那样可滑动、可缩放）*/
+  /* 区间按钮（2026-10-15：只保留 1 / 3 / 6 个月，取消自由滑动/缩放）*/
   .rangebar { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:12px 0 4px; }
   .rgbtns { display:flex; gap:6px; }
   .rgbtn { font-size:12.5px; padding:6px 14px; border:1px solid #dbe2ee; background:#fff; border-radius:999px; cursor:pointer; color:#334155; }
   .rgbtn:hover { border-color:#93b4f7; }
   .rgbtn.on { background:#1d4ed8; border-color:#1d4ed8; color:#fff; font-weight:700; }
   .rgsplit { font-size:12.5px; color:#475569; }
-  #panSlider { flex:1 1 240px; min-width:160px; accent-color:#1d4ed8; cursor:pointer; }
   .rghint { font-size:11.5px; color:#8a93a6; }
-  .chart-box { cursor:grab; }
-  .chart-box.dragging { cursor:grabbing; }
   .trg { margin-top:12px; font-size:12.5px; color:#475569; }
   .trg summary { cursor:pointer; color:#1d4ed8; outline:none; }
   .trg table { margin-top:8px; border-collapse:collapse; font-size:12px; }
@@ -126,11 +123,9 @@
         <button class="rgbtn on" data-n="0">1 个月</button>
         <button class="rgbtn" data-n="63">3 个月</button>
         <button class="rgbtn" data-n="126">6 个月</button>
-        <button class="rgbtn" data-n="-1">全部</button>
       </div>
       <div class="rgsplit" id="rgSplit">—</div>
-      <input type="range" id="panSlider" min="0" max="0" value="0" step="1">
-      <span class="rghint">拖动图表左右平移 · 滚轮缩放 · 滑块平移</span>
+      <span class="rghint">区间：1 / 3 / 6 个月（默认最近 1 个月）</span>
     </div>
     <div class="legend">
       <span><i class="sw quote"></i> 市场逐日报价（现状：每天都在动）</span>
@@ -176,7 +171,7 @@ function updatePoolNote(){
     el.innerHTML = '当前券池：<b>博时基金券单</b>（清单 ' + pm.n_client_list + ' 只，本窗口有完整报价 <b>' + pm.n_bonds +
       ' 只</b>' + (pm.missing && pm.missing.length ? '，缺数据 ' + pm.missing.length + ' 只' : '') +
       '）· 含权券占比 ' + pm.callable_pct + '%（按行权日定价）· 全期 ' + pm.n_days + ' 个交易日（' + pm.window +
-      '），图表默认显示最近 ' + (pm.live_n_days || pm.n_days) + ' 个交易日，可滑动/缩放回看至 ' + pm.window.split(' ~ ')[0] +
+      '），图表默认显示最近 ' + (pm.live_n_days || pm.n_days) + ' 个交易日，可选 1 / 3 / 6 个月区间（最早 ' + pm.window.split(' ~ ')[0] + '）' +
       ' · 口径与引擎与全池完全相同（' + pm.trigger_policy + '）';
   } else {
     el.innerHTML = '当前券池：<b>客户 Funding Note 池全量</b>（' + pm.n_bonds + ' 只 × ' + pm.n_days + ' 个交易日）· ' + (pm.trigger_policy || '');
@@ -210,7 +205,7 @@ function alignFineText(){
     h = h.replace(/这天全池 \d+ 只一起换 mark/, '这天整池 ' + m.n_bonds + ' 只一起换 mark');
     h = h.replace(/客户 Funding Note 池 \d+ 只 × \d+ 个交易日（[^）]*）/,
                   '客户提供的 CNH Funding Notes 券单 ' + m.n_bonds + ' 只 × ' + m.n_days + ' 个交易日（' + m.window +
-                  '）· 图表可用「1 / 3 / 6 个月 · 全部」切换区间，拖动或滚轮缩放，默认视窗＝最近 ' + (m.live_n_days || 28) + ' 个交易日（' + (m.live_window || '') + '）');
+                  '）· 图表可选「1 / 3 / 6 个月」区间，默认视窗＝最近 ' + (m.live_n_days || 28) + ' 个交易日（' + (m.live_window || '') + '）');
     /* 长窗口口径下，曲线层重估日的相位与「全池 28 天」不同 → 按本池自己的日历重写 */
     var EVAL = DATA.event_idx || [], NDD = DATA.dates.length, LN = m.live_n_days || 28;
     var evv = EVAL.filter(function(i){ return i >= NDD - LN; }).map(function(i){ return DATA.dates[i]; });
@@ -219,7 +214,7 @@ function alignFineText(){
         '默认视窗内 ' + evv.length + ' 次：' + evv.join(' / ') + '（全期 ' + EVAL.length + ' 次）');
     }
     h = h.replace(/本窗口曲线层未额外提前触发/,
-      '默认视窗 ' + DATA.dates[NDD - LN] + ' ~ ' + DATA.dates[NDD - 1] + '，可滑动/缩放回看至 ' + DATA.dates[0]);
+      '默认视窗 ' + DATA.dates[NDD - LN] + ' ~ ' + DATA.dates[NDD - 1] + '，可选 1 / 3 / 6 个月区间（最早 ' + DATA.dates[0] + '）');
     if (m.stale_curve){
       h = h.replace(/非重估日存在未确认的曲线移动，中位 [\d.]+ bp、最大 [\d.]+ bp/,
         '非重估日存在未确认的曲线移动，全期中位 ' + m.stale_curve.median_bp + ' bp、最大 ' + m.stale_curve.max_bp + ' bp');
@@ -294,8 +289,8 @@ function render(){
   var BID = isPx ? (b.bid_price || b.quote_price) : b.bid;
   var ASK = isPx ? (b.ask_price || b.quote_price) : b.ask;
   var trgAll = b.triggers || [];
-  /* ── 区间视窗（2026-10-15 用户要求：像行情软件那样可左右滑动、可缩放）──
-     只把窗口内的数据交给图表与统计，拖动/滚轮/滑块触发重画；全期数据仍在 DATA 里 */
+  /* ── 区间视窗（2026-10-15：1 / 3 / 6 个月三档，默认最近 1 个月）──
+     只把窗口内的数据交给图表与统计；点区间按钮重画；全期数据仍在 DATA 里 */
   var NALL = xs.length;
   if (!(VIEW.b > VIEW.a) || VIEW.b >= NALL || VIEW.a < 0) resetView();
   var A = VIEW.a, BW = VIEW.b;
@@ -362,7 +357,7 @@ function render(){
     '<b>'+b.name+'</b>（'+b.issuer+'，'+b.rating+'，剩余 '+(b.tenor!=null?b.tenor+'年':'—')+'）：'
     + '市场报价在这 ' + stD.length + ' 个交易日里平均每天动 <b>'+fmtN(avgRp, isPx?4:1)+UNIT+'</b>，看不出规律；'
     + '本口径下估值有 <b>'+flat+' 天完全不动</b>，变动只来自 <b>曲线层重估（'+ev.length+' 次，全池一起）</b> 与 <b>该券自身触发（'+trg.length+' 次，只动这一支）</b>，单次最大 <b>'+fmtN(maxJump, isPx?4:1)+UNIT+'</b>。'
-    + '<span style="color:#475569">（视窗 '+DATA.dates[VIEW.a]+' ~ '+DATA.dates[VIEW.b]+'，全期 '+DATA.dates.length+' 个交易日，可滑动/缩放）</span>'
+    + '<span style="color:#475569">（视窗 '+DATA.dates[VIEW.a]+' ~ '+DATA.dates[VIEW.b]+'，全期 '+DATA.dates.length+' 个交易日）</span>'
     + (isPx ? '这就是客户关心的 cash price 口径：长券 5bp 的收益率变动在这里会变成约 0.3 元/百元的价格跳动（净价＝数据源当日净价按该券久期线性转移，不重算券的现金流）。'
             : '估值变动的来源只有两类：曲线层重估时的整池同步，和该券报价偏离超阈时的单独重估——每一处都能追溯到哪一天、因为什么。')
     + pxNote;
@@ -380,8 +375,8 @@ function render(){
   updateRangeBar();
 }
 
-/* ── 区间视窗：状态与控件（2026-10-15：像行情软件那样可滑动、可缩放）──
-   1 个月＝默认视窗（meta.live_n_days，与页面 KPI 口径一致）；3/6 个月、全部；拖动平移、滚轮缩放、滑块平移 */
+/* ── 区间视窗：1 / 3 / 6 个月三档（2026-10-15 定稿：取消自由滑动/缩放，按钮切换）
+   1 个月＝默认视窗（meta.live_n_days，与页面 KPI 口径一致）；视窗一律贴到最后一天 */
 var VIEW = {a:0, b:0};
 function defLen(){ var L = (DATA && DATA.meta && DATA.meta.live_n_days) || 28; return Math.min(L, DATA.dates.length); }
 function viewLen(){ return VIEW.b - VIEW.a + 1; }
@@ -392,7 +387,7 @@ function setLen(L){
   render();
 }
 function panTo(a){
-  var N = DATA.dates.length, L = viewLen();
+  var N = DATA.dates.length, L = viewLen();   /* 保留：仅区间按钮用，页面不再绑定拖动/滑块 */
   VIEW.a = Math.max(0, Math.min(Math.round(a), Math.max(0, N - L)));
   VIEW.b = Math.min(N - 1, VIEW.a + L - 1);
   render();
@@ -402,11 +397,9 @@ function updateRangeBar(){
   var N = DATA.dates.length;
   el.innerHTML = '当前视窗：<b>' + DATA.dates[VIEW.a] + ' ~ ' + DATA.dates[VIEW.b] + '</b>（' + viewLen() +
                  ' 个交易日 · 全期 ' + N + '）';
-  var s = document.getElementById('panSlider');
-  if (s){ s.max = String(Math.max(0, N - viewLen())); s.value = String(VIEW.a); }
   [].forEach.call(document.querySelectorAll('#rgBtns .rgbtn'), function(btn){
     var n = +btn.getAttribute('data-n'), L = viewLen();
-    var on = (n === -1) ? (L >= N - 2) : (n === 0 ? Math.abs(L - defLen()) <= 2 : Math.abs(L - n) <= 3);
+    var on = (n === 0) ? Math.abs(L - defLen()) <= 2 : Math.abs(L - n) <= 3;
     btn.className = 'rgbtn' + (on ? ' on' : '');
   });
 }
@@ -414,36 +407,8 @@ document.getElementById('rgBtns').addEventListener('click', function(e){
   var btn = e.target.closest ? e.target.closest('.rgbtn') : null;
   if (!btn || !DATA) return;
   var n = +btn.getAttribute('data-n');
-  setLen(n === -1 ? DATA.dates.length : (n === 0 ? defLen() : n));
+  setLen(n === 0 ? defLen() : n);
 });
-document.getElementById('panSlider').addEventListener('input', function(){ if (DATA) panTo(+this.value); });
-(function(){
-  var cv = document.getElementById('chart'), box = document.getElementById('chartBox'), drag = null;
-  cv.addEventListener('mousedown', function(e){
-    if (!chart) return;
-    drag = {x:e.clientX, a:VIEW.a, w:Math.max(1, chart.chartArea.right - chart.chartArea.left)};
-    if (box) box.classList.add('dragging');
-    e.preventDefault();
-  });
-  window.addEventListener('mouseup', function(){ drag = null; if (box) box.classList.remove('dragging'); });
-  window.addEventListener('mousemove', function(e){
-    if (!drag || !chart || !DATA) return;
-    var per = drag.w / Math.max(1, viewLen());
-    var d = Math.round((drag.x - e.clientX) / per);
-    if (d !== 0){ var t = drag.a + d; drag.x = e.clientX; drag.a = Math.max(0, Math.min(t, DATA.dates.length - viewLen())); panTo(t); }
-  });
-  cv.addEventListener('wheel', function(e){
-    if (!chart || !DATA) return;
-    e.preventDefault();
-    var N = DATA.dates.length, L = viewLen();
-    var nl = Math.max(8, Math.min(N, Math.round(L * (e.deltaY > 0 ? 1.18 : 0.85))));
-    if (nl === L) return;
-    var ar = chart.chartArea, r = Math.max(0, Math.min(1, (e.offsetX - ar.left) / Math.max(1, ar.right - ar.left)));
-    var a = Math.round(VIEW.a + r * L - r * nl);
-    VIEW.a = Math.max(0, Math.min(a, N - nl)); VIEW.b = VIEW.a + nl - 1;
-    render();
-  }, {passive:false});
-})();
 document.getElementById('bondSel').addEventListener('change', render);
 document.getElementById('dispSel').addEventListener('change', render);
 
